@@ -3,3 +3,5 @@ matplotlib
 python-dotenv
 neo4j
 falkordb
+# Optional for Kùzu when using Python 3.12
+kuzu
