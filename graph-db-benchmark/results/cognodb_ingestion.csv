@@ -1,0 +1,2 @@
+platform,node_count,rel_count,batch_size,insertion_time_s,ingestion_throughput_rel_s
+CognoDB,7115,103689,1000,294.868,351.65

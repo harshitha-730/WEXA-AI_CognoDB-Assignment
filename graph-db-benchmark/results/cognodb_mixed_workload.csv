@@ -1,0 +1,4 @@
+platform,clients,operations,completed,failed,duration_s,throughput_ops_s
+CognoDB,1,20,20,0,6.813,2.94
+CognoDB,4,80,80,0,8.267,9.68
+CognoDB,8,160,160,0,8.724,18.34

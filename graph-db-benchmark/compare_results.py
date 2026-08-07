@@ -1,57 +1,22 @@
 import csv
 import os
 
-RESULTS_DIR = "results"
 
-FILES = {
-    "CognoDB": "cognodb_results.csv",
-    "Neo4j": "neo4j_results.csv",
-    "Memgraph": "memgraph_results.csv",
-    "FalkorDB": "falkordb_results.csv",
-    "Kuzu": "kuzu_results.csv",
+RESULT_FILES = {
+    "CognoDB": "results/cognodb_results.csv",
+    "Neo4j": "results/neo4j_results.csv",
+    "Memgraph": "results/memgraph_results.csv",
+    "FalkorDB": "results/falkordb_results.csv",
+    "Kùzu": "results/kuzu_results.csv",
 }
 
 
-def load_result(platform, filename):
-    path = os.path.join(RESULTS_DIR, filename)
-
-    if not os.path.exists(path):
-        print(f"⚠️ Missing result: {path}")
-        return None
-
-    with open(path, newline="") as file:
-        rows = list(csv.DictReader(file))
-
-    if not rows:
-        print(f"⚠️ Empty result: {path}")
-        return None
-
-    row = rows[0]
-    row["platform"] = platform
-
-    return row
+OUTPUT_FILE = "results/final_comparison.csv"
 
 
-results = []
-
-for platform, filename in FILES.items():
-    result = load_result(platform, filename)
-
-    if result:
-        results.append(result)
-
-
-if not results:
-    raise RuntimeError("No benchmark results found.")
-
-
-# --------------------------------------------------
-# Comparison output
-# --------------------------------------------------
-
-fields = [
+FIELDS = [
+    "Database",
     "platform",
-
     "node_count",
     "rel_count",
 
@@ -72,76 +37,137 @@ fields = [
 
     "aggregation_p50_ms",
     "aggregation_p95_ms",
+
+    "used_memory_human",
+    "used_memory_bytes",
+
+    "on_disk_size_bytes",
+    "on_disk_size_human",
+
+    "note",
 ]
 
 
-output_file = os.path.join(
-    RESULTS_DIR,
-    "comparison.csv"
-)
+def read_result(path):
+    """
+    Read benchmark CSV using Latin-1 encoding.
+    Latin-1 handles characters such as ù in Kùzu
+    without UnicodeDecodeError.
+    """
+
+    with open(
+        path,
+        "r",
+        encoding="latin-1",
+        newline=""
+    ) as f:
+
+        reader = csv.DictReader(f)
+
+        try:
+            return next(reader)
+        except StopIteration:
+            raise ValueError(f"Empty result file: {path}")
 
 
-with open(output_file, "w", newline="") as file:
+def clean_value(row, field):
+    value = row.get(field, "")
 
-    writer = csv.DictWriter(
-        file,
-        fieldnames=fields,
-        extrasaction="ignore"
-    )
+    if value is None:
+        return ""
 
-    writer.writeheader()
-
-    for result in results:
-        writer.writerow(result)
+    return value
 
 
-# --------------------------------------------------
-# Print readable comparison
-# --------------------------------------------------
+os.makedirs("results", exist_ok=True)
+
+all_results = []
+
 
 print("\n================ BENCHMARK COMPARISON ================\n")
 
-for result in results:
 
-    print(f"Platform: {result['platform']}")
+for database, path in RESULT_FILES.items():
+
+    if not os.path.exists(path):
+        print(f"WARNING: Missing {path}")
+        continue
+
+    row = read_result(path)
+
+    result = {
+        "Database": database
+    }
+
+    for field in FIELDS:
+
+        if field != "Database":
+            result[field] = clean_value(row, field)
+
+    all_results.append(result)
+
+
+    print(f"Platform: {database}")
 
     print(
-        f"  1-hop traversal: "
-        f"p50={result.get('traversal_1hop_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('traversal_1hop_p95_ms', 'N/A')} ms"
+        f"1-hop traversal: "
+        f"p50={result['traversal_1hop_p50_ms']} ms | "
+        f"p95={result['traversal_1hop_p95_ms']} ms"
     )
 
     print(
-        f"  2-hop traversal: "
-        f"p50={result.get('traversal_2hop_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('traversal_2hop_p95_ms', 'N/A')} ms"
+        f"2-hop traversal: "
+        f"p50={result['traversal_2hop_p50_ms']} ms | "
+        f"p95={result['traversal_2hop_p95_ms']} ms"
     )
 
     print(
-        f"  3-hop traversal: "
-        f"p50={result.get('traversal_3hop_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('traversal_3hop_p95_ms', 'N/A')} ms"
+        f"3-hop traversal: "
+        f"p50={result['traversal_3hop_p50_ms']} ms | "
+        f"p95={result['traversal_3hop_p95_ms']} ms"
     )
 
     print(
-        f"  Point lookup: "
-        f"p50={result.get('point_lookup_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('point_lookup_p95_ms', 'N/A')} ms"
+        f"Point lookup: "
+        f"p50={result['point_lookup_p50_ms']} ms | "
+        f"p95={result['point_lookup_p95_ms']} ms"
     )
 
     print(
-        f"  Filtered lookup: "
-        f"p50={result.get('filtered_lookup_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('filtered_lookup_p95_ms', 'N/A')} ms"
+        f"Filtered lookup: "
+        f"p50={result['filtered_lookup_p50_ms']} ms | "
+        f"p95={result['filtered_lookup_p95_ms']} ms"
     )
 
     print(
-        f"  Aggregation: "
-        f"p50={result.get('aggregation_p50_ms', 'N/A')} ms | "
-        f"p95={result.get('aggregation_p95_ms', 'N/A')} ms"
+        f"Aggregation: "
+        f"p50={result['aggregation_p50_ms']} ms | "
+        f"p95={result['aggregation_p95_ms']} ms"
     )
 
     print()
 
 
-print(f"Comparison saved to: {output_file}")
+# -------------------------------------------------------
+# Write final comparison
+# -------------------------------------------------------
+
+with open(
+    OUTPUT_FILE,
+    "w",
+    encoding="latin-1",
+    newline=""
+) as f:
+
+    writer = csv.DictWriter(
+        f,
+        fieldnames=FIELDS
+    )
+
+    writer.writeheader()
+    writer.writerows(all_results)
+
+
+print(
+    f"Final comparison saved to: {OUTPUT_FILE}"
+)

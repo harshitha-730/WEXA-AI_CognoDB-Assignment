@@ -7,8 +7,8 @@ import statistics
 from dotenv import load_dotenv
 from benchmark.neo4j import Neo4jBenchmark
 
-load_dotenv()
 
+load_dotenv()
 
 db = Neo4jBenchmark(
     os.getenv("NEO4J_URI"),
@@ -19,13 +19,23 @@ db = Neo4jBenchmark(
 db.connect()
 
 
+# ----------------------------
+# Measure latency
+# ----------------------------
+
 def measure(fn, runs=100):
+
     times = []
 
     for _ in range(runs):
+
         start = time.perf_counter()
+
         fn()
-        times.append((time.perf_counter() - start) * 1000)
+
+        elapsed = (time.perf_counter() - start) * 1000
+
+        times.append(elapsed)
 
     times.sort()
 
@@ -35,9 +45,9 @@ def measure(fn, runs=100):
     return round(p50, 3), round(p95, 3)
 
 
-# -------------------------
-# Basic counts
-# -------------------------
+# ----------------------------
+# Basic information
+# ----------------------------
 
 results = {
     "platform": "Neo4j",
@@ -46,7 +56,9 @@ results = {
 }
 
 
-# Get random user IDs
+# ----------------------------
+# Load user IDs
+# ----------------------------
 
 users = db.execute_query(
     """
@@ -58,21 +70,51 @@ users = db.execute_query(
 
 user_ids = [u["id"] for u in users]
 
+print(f"Using {len(user_ids)} nodes")
 
-# -------------------------
+
+# ----------------------------
+# Warm-up
+# ----------------------------
+
+print("\n🔥 Running warm-up...")
+
+for _ in range(20):
+
+    uid = random.choice(user_ids)
+
+    db.lookup_user(uid)
+
+    db.execute_query(
+        """
+        MATCH (u:User {id: $id})
+              -[:VOTED_FOR]->()
+        RETURN count(*)
+        """,
+        {"id": uid}
+    )
+
+db.aggregation()
+
+print("Warm-up completed")
+
+
+# ----------------------------
 # Traversal benchmark
-# -------------------------
+# ----------------------------
 
 def traversal(hops):
 
     pattern = "-[:VOTED_FOR]->()" * hops
 
     def run():
+
         uid = random.choice(user_ids)
 
         db.execute_query(
             f"""
-            MATCH (u:User {{id:$id}}){pattern}
+            MATCH (u:User {{id: $id}})
+                  {pattern}
             RETURN count(*)
             """,
             {"id": uid}
@@ -81,7 +123,9 @@ def traversal(hops):
     return measure(run)
 
 
-for hop in [1,2,3]:
+for hop in [1, 2, 3]:
+
+    print(f"\nRunning {hop}-hop traversal...")
 
     p50, p95 = traversal(hop)
 
@@ -89,10 +133,11 @@ for hop in [1,2,3]:
     results[f"traversal_{hop}hop_p95_ms"] = p95
 
 
-
-# -------------------------
+# ----------------------------
 # Point lookup
-# -------------------------
+# ----------------------------
+
+print("\nRunning point lookup...")
 
 def lookup():
 
@@ -101,54 +146,55 @@ def lookup():
     db.lookup_user(uid)
 
 
-p50,p95 = measure(lookup)
+p50, p95 = measure(lookup)
 
 results["point_lookup_p50_ms"] = p50
 results["point_lookup_p95_ms"] = p95
 
 
+# ----------------------------
+# Filtered lookup
+# ----------------------------
 
-# -------------------------
-# Filter lookup
-# -------------------------
+print("Running filtered lookup...")
 
 def filtered():
 
-    uid=random.choice(user_ids)
+    uid = random.choice(user_ids)
 
     db.execute_query(
         """
         MATCH (u:User)
-        WHERE u.id=$id
+        WHERE u.id = $id
         RETURN u
         """,
-        {"id":uid}
+        {"id": uid}
     )
 
 
-p50,p95 = measure(filtered)
+p50, p95 = measure(filtered)
 
-results["filtered_lookup_p50_ms"]=p50
-results["filtered_lookup_p95_ms"]=p95
+results["filtered_lookup_p50_ms"] = p50
+results["filtered_lookup_p95_ms"] = p95
 
 
-
-# -------------------------
+# ----------------------------
 # Aggregation
-# -------------------------
+# ----------------------------
 
-p50,p95 = measure(db.aggregation)
+print("Running aggregation...")
 
-results["aggregation_p50_ms"]=p50
-results["aggregation_p95_ms"]=p95
+p50, p95 = measure(db.aggregation)
+
+results["aggregation_p50_ms"] = p50
+results["aggregation_p95_ms"] = p95
 
 
-
-# -------------------------
+# ----------------------------
 # Save
-# -------------------------
+# ----------------------------
 
-os.makedirs("results",exist_ok=True)
+os.makedirs("results", exist_ok=True)
 
 with open(
     "results/neo4j_results.csv",
@@ -156,7 +202,7 @@ with open(
     newline=""
 ) as f:
 
-    writer=csv.DictWriter(
+    writer = csv.DictWriter(
         f,
         fieldnames=results.keys()
     )
@@ -165,11 +211,14 @@ with open(
     writer.writerow(results)
 
 
-print(results)
+print("\n==============================")
+print("Neo4j Benchmark Results")
+print("==============================")
 
-print(
-    "Saved results/neo4j_results.csv"
-)
+for key, value in results.items():
+    print(f"{key}: {value}")
+
+print("\nSaved: results/neo4j_results.csv")
 
 
 db.close()

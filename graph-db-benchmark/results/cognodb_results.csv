@@ -1,0 +1,2 @@
+platform,node_count,rel_count,traversal_1hop_p50_ms,traversal_1hop_p95_ms,traversal_2hop_p50_ms,traversal_2hop_p95_ms,traversal_3hop_p50_ms,traversal_3hop_p95_ms,point_lookup_p50_ms,point_lookup_p95_ms,filtered_lookup_p50_ms,filtered_lookup_p95_ms,aggregation_p50_ms,aggregation_p95_ms
+CognoDB,7115,103689,264.689,409.022,246.465,397.525,329.279,784.688,270.538,726.402,256.037,697.896,369.197,742.751

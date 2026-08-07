@@ -5,7 +5,8 @@ import os
 
 # Load final comparison
 df = pd.read_csv(
-    "results/final_comparison.csv"
+    "results/final_comparison.csv",
+    encoding="latin1"
 )
 
 
