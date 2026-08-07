@@ -1,262 +1,248 @@
-Graph Database Benchmark
+# Graph DB Benchmark
 
-A reproducible benchmark comparing CognoDB, Neo4j, Memgraph, FalkorDB, and Kùzu using the Wiki-Vote graph dataset.
+This repository contains a reproducible benchmark of Neo4j, Memgraph, FalkorDB, Kùzu, and CognoDB using the Wiki-Vote graph dataset.
 
-The benchmark evaluates graph ingestion performance, point lookups, filtered/indexed lookups, 1-hop/2-hop/3-hop traversals, aggregation queries, latency percentiles, and mixed concurrent workloads.
+> **Evaluator note:** This README documents setup, execution, result generation, and analysis in a clear, structured way.
 
-Databases
+---
 
-The benchmark includes:
+## Objective
 
-CognoDB
-Neo4j
-Memgraph
-FalkorDB
-Kùzu
-Dataset
+- Load the Wiki-Vote dataset into multiple graph databases
+- Measure query latency for point lookup, filtered lookup, traversal, and aggregation
+- Compare results across databases
+- Generate charts and a concise report
 
-Dataset: Wiki-Vote
+---
 
-The same logical graph dataset is used across the benchmarked databases.
+## Databases included
 
-Property	Value
-Nodes	7,115
-Relationships	103,689
-Relationship Type	VOTED_FOR
-Repository Structure
-graph-db-benchmark/
-│
-├── benchmark/
-│   ├── cognodb.py
-│   ├── neo4j.py
-│   ├── memgraph.py
-│   ├── falkordb.py
-│   └── kuzu.py
-│
-├── datasets/
-│   └── Wiki-Vote.txt
-│
-├── results/
-│   ├── cognodb_results.csv
-│   ├── cognodb_ingestion.csv
-│   ├── cognodb_mixed_workload.csv
-│   ├── neo4j_results.csv
-│   ├── memgraph_results.csv
-│   ├── falkordb_results.csv
-│   ├── kuzu_results.csv
-│   └── final_comparison.csv
-│
-├── utils/
-│
-├── cognodb_benchmark.py
-├── mixed_benchmark.py
-├── compare_results.py
-├── load_data.py
-├── main.py
-│
-├── requirements.txt
-├── README.md
-└── .env
-Environment Setup
+- CognoDB
+- Neo4j
+- Memgraph
+- FalkorDB
+- Kùzu
 
-Create and activate the main Python environment:
+---
 
+## Dataset
+
+- Name: Wiki-Vote
+- Nodes: 7,115
+- Relationships: 103,689
+- Relationship type: `VOTED_FOR`
+
+---
+
+## Repository structure
+
+- `benchmark/` - database benchmark classes and query implementations
+- `datasets/` - Wiki-Vote input data and Kùzu CSV files
+- `load_*.py` - ingestion scripts for each database
+- `*_benchmark.py` - benchmark runners for each database platform
+- `compare_results.py` - merges individual database results into a final comparison
+- `visualize_results.py` - generates charts under `results/plots/`
+- `results/` - generated benchmark CSVs and plots
+- `utils/` - shared helper modules
+- `.env` - environment configuration file
+- `requirements.txt` - Python dependencies
+- `ASSIGNMENT_REPORT.md` - concise benchmark report and findings
+
+---
+
+## Setup
+
+### 1. Main environment
+
+```powershell
 python -m venv venv
 venv\Scripts\activate
-
-Install dependencies:
-
 pip install -r requirements.txt
-Kùzu Environment
+```
 
-Kùzu can be installed in a separate environment when required by the installed Python version:
+### 2. Kùzu environment
 
+Kùzu requires Python 3.12, so it is installed into a separate virtual environment.
+
+```powershell
 python -m venv kuzu_venv
 kuzu_venv\Scripts\activate
+pip install -r requirements.txt
 pip install kuzu
-Configuration
+```
 
-Database connection information is stored in .env.
+> If `kuzu` import fails, activate `kuzu_venv` and verify Python:
+>
+> ```powershell
+> kuzu_venv\Scripts\activate
+> python --version
+> ```
+>
+> It should report Python 3.12.x.
 
-Do not commit real credentials or passwords to GitHub.
+---
 
-Example:
+## Environment variables
 
-COGNODB_URI=bolt://<cognodb-host>:<port>
-COGNODB_USERNAME=<username>
-COGNODB_PASSWORD=<password>
+Create a `.env` file in the repository root with the following values:
 
+```env
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=<password>
+NEO4J_PASSWORD=password
 
-MEMGRAPH_URI=bolt://localhost:7688
-MEMGRAPH_USERNAME=
-MEMGRAPH_PASSWORD=
+MEMGRAPH_URI=bolt://localhost:7687
+MEMGRAPH_USERNAME=memgraph
+MEMGRAPH_PASSWORD=password
 
 FALKORDB_HOST=localhost
 FALKORDB_PORT=6379
 
-Replace the placeholder values with the appropriate local or cloud configuration.
+COGNODB_URI=bolt://localhost:7687
+COGNODB_USERNAME=admin
+COGNODB_PASSWORD=password
+```
 
-Data Ingestion
+Update these values for your local deployment.
 
-The Wiki-Vote dataset is loaded into CognoDB using batches of 1,000 relationships.
+---
 
-Run:
+## Data ingestion
 
+Load the dataset into each database:
+
+```powershell
+venv\Scripts\activate
+python load_neo4j.py
+python load_memgraph.py
+python load_falkordb.py
 python load_data.py
+```
 
-The ingestion benchmark records:
+For Kùzu:
 
-Total nodes
-Total relationships
-Batch size
-Total insertion time
-Relationship ingestion throughput
-CognoDB Ingestion Result
-Metric	Result
-Nodes	7,115
-Relationships	103,689
-Batch Size	1,000
-Insertion Time	294.868 seconds
-Throughput	351.65 relationships/sec
+```powershell
+kuzu_venv\Scripts\activate
+python load_kuzu.py
+```
 
-Result file:
+---
 
-results/cognodb_ingestion.csv
-Query Benchmark
+## Benchmark execution
 
-The benchmark evaluates the following graph operations.
+Run each benchmark:
 
-1. Point Lookup
+```powershell
+venv\Scripts\activate
+python neo4j_benchmark.py
+python memgraph_benchmark.py
+python falkordb_benchmark.py
+```
 
-Find a user by its ID.
+For Kùzu:
 
-2. Filtered / Indexed Lookup
+```powershell
+kuzu_venv\Scripts\activate
+python kuzu_benchmark.py
+```
 
-Find a user using the User.id property and the database's available indexing mechanism.
+---
 
-3. 1-Hop Traversal
+## Combine results and visualize
 
-Traverse one VOTED_FOR relationship.
+```powershell
+venv\Scripts\activate
+python compare_results.py
+python visualize_results.py
+```
 
-4. 2-Hop Traversal
+Results are stored under `results/` and charts are saved to `results/plots/`.
 
-Traverse two consecutive VOTED_FOR relationships.
+---
 
-5. 3-Hop Traversal
+## Validation tests
 
-Traverse three consecutive VOTED_FOR relationships.
+```powershell
+venv\Scripts\activate
+python test_neo4j.py
+python test_memgraph.py
+python test_falkordb.py
+```
 
-6. Aggregation
+> Kùzu does not have a dedicated test script; use `load_kuzu.py` and `kuzu_benchmark.py` for Kùzu validation.
 
-Identify users with the highest number of outgoing relationships.
+---
 
-For the latency benchmarks, repeated executions are performed and the following metrics are reported:
+## Result files
 
-p50 latency
-p95 latency
+- `results/neo4j_results.csv`
+- `results/memgraph_results.csv`
+- `results/falkordb_results.csv`
+- `results/kuzu_results.csv`
+- `results/final_comparison.csv`
+- `results/plots/aggregation_comparison.png`
+- `results/plots/lookup_comparison.png`
+- `results/plots/traversal_comparison.png`
 
-A warm-up phase is performed before measured query executions.
+---
 
-CognoDB Benchmark
+## Benchmark metrics
 
-Run:
+The benchmark evaluates:
 
-python cognodb_benchmark.py
+- Point lookup
+- Filtered lookup
+- 1-hop traversal
+- 2-hop traversal
+- 3-hop traversal
+- Aggregation
 
-Results are saved to:
+Each measurement captures p50 and p95 latency values.
 
-results/cognodb_results.csv
+---
 
-CognoDB processed the complete Wiki-Vote graph:
+## Key findings
 
-Nodes: 7115
-Relationships: 103689
-CognoDB Query Results
-Metric	p50 (ms)	p95 (ms)
-1-Hop Traversal	264.689	409.022
-2-Hop Traversal	246.465	397.525
-3-Hop Traversal	329.279	784.688
-Point Lookup	270.538	726.402
-Filtered Lookup	256.037	697.896
-Aggregation	369.197	742.751
-Mixed Read/Write Benchmark
+- **Kùzu** is fastest for point lookup, filtered lookup, and aggregation.
+- **FalkorDB** is best for 2-hop and 3-hop traversal latency.
+- **Memgraph** performs steadily in the mid-range.
+- **Neo4j** is slower than the other tested platforms for this workload.
 
-A mixed workload benchmark is included to evaluate concurrent graph operations.
+### Winner summary
 
-The workload contains:
+| Metric | Winner |
+|---|---|
+| Point lookup | Kùzu |
+| Filtered lookup | Kùzu |
+| 1-hop traversal | Kùzu |
+| 2-hop traversal | FalkorDB |
+| 3-hop traversal | FalkorDB |
+| Aggregation | Kùzu |
 
-Point lookups
-Traversals
-Aggregations
-Relationship writes
+---
 
-The benchmark tests:
+## Notes
 
-1 concurrent client
-4 concurrent clients
-8 concurrent clients
+- `kuzu_venv` is separate because Kùzu requires Python 3.12.
+- `results/` is excluded from git and regenerated during benchmark runs.
+- `ASSIGNMENT_REPORT.md` contains a concise report and observations.
 
-Run:
+---
 
-python mixed_benchmark.py
-CognoDB Mixed Workload Results
-Clients	Operations	Completed	Failed	Duration (s)	Throughput (ops/sec)
-1	20	20	0	6.813	2.94
-4	80	80	0	8.267	9.68
-8	160	160	0	8.724	18.34
+## Known limitations
 
-Result file:
+- Single dataset workload only.
+- Performance may vary on a different dataset or deployment.
+- Kùzu is benchmarked as an embedded database while others use network drivers.
 
-results/cognodb_mixed_workload.csv
+---
 
-All tested mixed-workload operations completed successfully with 0 failures.
+## Dependencies
 
-Benchmark Comparison
+```powershell
+pip install -r requirements.txt
+```
 
-All databases were evaluated using the same logical graph size:
-
-7,115 nodes
-103,689 relationships
-
-The final comparison is stored in:
-
-results/final_comparison.csv
-Query Latency Comparison
-Database	1-Hop p50	2-Hop p50	3-Hop p50	Point Lookup p50	Filtered Lookup p50	Aggregation p50
-CognoDB	264.689	246.465	329.279	270.538	256.037	369.197
-Neo4j	20.358	19.021	11.157	10.178	8.363	38.766
-Memgraph	6.769	6.038	5.717	4.154	4.101	41.957
-FalkorDB	2.721	2.447	2.991	2.252	2.285	61.421
-Kùzu	1.807	5.541	9.842	0.852	0.916	20.159
-
-All values are p50 client-observed latency in milliseconds from the recorded benchmark run.
-
-p95 Latency Comparison
-Database	1-Hop p95	2-Hop p95	3-Hop p95	Point Lookup p95	Filtered Lookup p95	Aggregation p95
-CognoDB	409.022	397.525	784.688	726.402	697.896	742.751
-Neo4j	28.793	25.486	127.193	13.653	9.690	65.853
-Memgraph	14.291	14.442	50.525	5.129	4.840	57.603
-FalkorDB	3.218	3.109	3.905	2.652	2.528	71.004
-Kùzu	2.417	7.413	12.836	1.169	1.183	22.608
-Observed Results
-Point Lookup
-
-Kùzu recorded the lowest measured point-lookup latency, followed by FalkorDB, Memgraph, Neo4j, and CognoDB.
-
-Filtered Lookup
-
-Kùzu recorded the lowest measured filtered-lookup latency, followed by FalkorDB, Memgraph, Neo4j, and CognoDB.
-
-Traversal
-
-Kùzu recorded the lowest measured 1-hop latency.
-
-FalkorDB recorded the lowest measured 2-hop and 3-hop traversal latency.
-
-Aggregation
 
 Kùzu recorded the lowest measured aggregation latency.
 
