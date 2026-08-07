@@ -1,0 +1,17 @@
+# Ignore Python virtual environments
+venv/
+kuzu_venv/
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore results and temporary output
+graph-db-benchmark/results/
+
+# Ignore VS Code workspace settings
+.vscode/
+
+# Ignore environment files if you want to keep them local
+.env
