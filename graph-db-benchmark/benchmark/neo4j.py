@@ -10,7 +10,7 @@ class Neo4jBenchmark:
         )
 
     # ----------------------------
-    # Connection Methods
+    # Connection
     # ----------------------------
 
     def connect(self):
@@ -27,8 +27,37 @@ class Neo4jBenchmark:
 
     def execute_query(self, query, parameters=None):
         with self.driver.session() as session:
-            result = session.run(query, parameters or {})
+            result = session.run(
+                query,
+                parameters or {}
+            )
             return list(result)
+
+    # ----------------------------
+    # Schema
+    # ----------------------------
+
+    def create_index(self):
+        query = """
+        CREATE INDEX user_id_index IF NOT EXISTS
+        FOR (n:User)
+        ON (n.id)
+        """
+
+        self.execute_query(query)
+        print("✅ User.id index created/verified")
+
+    # ----------------------------
+    # Clear Database
+    # ----------------------------
+
+    def clear_graph(self):
+        self.execute_query(
+            """
+            MATCH (n:User)
+            DETACH DELETE n
+            """
+        )
 
     # ----------------------------
     # Dataset Loading
@@ -61,54 +90,112 @@ class Neo4jBenchmark:
                     for source, target in batch
                 ]
 
-                session.run(query, edges=formatted_edges)
+                result = session.run(
+                    query,
+                    edges=formatted_edges
+                )
 
-                print(f"Inserted {min(i + batch_size, total)} / {total}")
+                # Force the database to finish the query
+                result.consume()
+
+                print(
+                    f"Inserted "
+                    f"{min(i + batch_size, total)} / {total}"
+                )
 
     # ----------------------------
-    # Benchmark Queries
+    # Counts
     # ----------------------------
 
     def count_nodes(self):
-        query = """
-        MATCH (n:User)
-        RETURN count(n) AS total
-        """
 
-        result = self.execute_query(query)
+        result = self.execute_query(
+            """
+            MATCH (n:User)
+            RETURN count(n) AS total
+            """
+        )
+
         return result[0]["total"]
 
     def count_relationships(self):
-        query = """
-        MATCH ()-[r:VOTED_FOR]->()
-        RETURN count(r) AS total
-        """
 
-        result = self.execute_query(query)
+        result = self.execute_query(
+            """
+            MATCH ()-[r:VOTED_FOR]->()
+            RETURN count(r) AS total
+            """
+        )
+
         return result[0]["total"]
 
+    # ----------------------------
+    # Queries
+    # ----------------------------
+
     def lookup_user(self, user_id):
+
         query = """
-        MATCH (u:User {id:$id})
+        MATCH (u:User {id: $id})
         RETURN u
         """
 
-        return self.execute_query(query, {"id": user_id})
+        return self.execute_query(
+            query,
+            {"id": user_id}
+        )
+
+    def filtered_lookup(self, user_id):
+
+        query = """
+        MATCH (u:User)
+        WHERE u.id = $id
+        RETURN u
+        """
+
+        return self.execute_query(
+            query,
+            {"id": user_id}
+        )
 
     def traverse(self, user_id):
+
         query = """
-        MATCH (u:User {id:$id})-[:VOTED_FOR]->(friend)
+        MATCH (u:User {id: $id})
+              -[:VOTED_FOR]->
+              (friend)
         RETURN friend
         """
 
-        return self.execute_query(query, {"id": user_id})
+        return self.execute_query(
+            query,
+            {"id": user_id}
+        )
 
     def aggregation(self):
+
         query = """
         MATCH (u:User)-[:VOTED_FOR]->()
-        RETURN u.id AS user_id, count(*) AS votes
+
+        RETURN
+            u.id AS user_id,
+            count(*) AS votes
+
         ORDER BY votes DESC
         LIMIT 10
         """
 
         return self.execute_query(query)
+
+    # ----------------------------
+    # Warm-up
+    # ----------------------------
+
+    def warmup(self, user_id=30):
+
+        self.lookup_user(user_id)
+        self.filtered_lookup(user_id)
+        self.traverse(user_id)
+        self.aggregation()
+
+        print("🔥 Warm-up completed")
