@@ -1,2 +1,0 @@
-platform,node_count,rel_count,traversal_1hop_p50_ms,traversal_1hop_p95_ms,traversal_2hop_p50_ms,traversal_2hop_p95_ms,traversal_3hop_p50_ms,traversal_3hop_p95_ms,point_lookup_p50_ms,point_lookup_p95_ms,filtered_lookup_p50_ms,filtered_lookup_p95_ms,aggregation_p50_ms,aggregation_p95_ms,used_memory_human,used_memory_bytes
-Memgraph,7115,103689,6.769,14.291,6.038,14.442,5.717,50.525,4.154,5.129,4.101,4.84,41.957,57.603,N/A,N/A

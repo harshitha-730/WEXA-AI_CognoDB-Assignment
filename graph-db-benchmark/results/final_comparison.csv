@@ -1,5 +1,0 @@
-﻿Database,platform,node_count,rel_count,traversal_1hop_p50_ms,traversal_1hop_p95_ms,traversal_2hop_p50_ms,traversal_2hop_p95_ms,traversal_3hop_p50_ms,traversal_3hop_p95_ms,point_lookup_p50_ms,point_lookup_p95_ms,filtered_lookup_p50_ms,filtered_lookup_p95_ms,aggregation_p50_ms,aggregation_p95_ms,used_memory_human,used_memory_bytes,on_disk_size_bytes,on_disk_size_human,note
-Neo4j,Neo4j,7115,103689,20.358,28.793,19.021,25.486,11.157,127.193,10.178,13.653,8.363,9.69,38.766,65.853,,,,,
-Memgraph,Memgraph,7115,103689,6.769,14.291,6.038,14.442,5.717,50.525,4.154,5.129,4.101,4.84,41.957,57.603,,,,,
-FalkorDB,FalkorDB,7115,103689,2.721,3.218,2.447,3.109,2.991,3.905,2.252,2.652,2.285,2.528,61.421,71.004,8.96M,9390392.0,,,
-Kùzu,Kùzu,7115,103689,1.807,2.417,5.541,7.413,9.842,12.836,0.852,1.169,0.916,1.183,20.159,22.608,,,0.0,0.00MB,"Kùzu is embedded; memory not exposed via API, reporting on-disk size instead"
