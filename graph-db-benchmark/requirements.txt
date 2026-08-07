@@ -1,0 +1,5 @@
+pandas
+matplotlib
+python-dotenv
+neo4j
+falkordb

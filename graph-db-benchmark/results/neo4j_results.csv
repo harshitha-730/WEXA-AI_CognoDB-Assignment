@@ -1,0 +1,2 @@
+platform,node_count,rel_count,traversal_1hop_p50_ms,traversal_1hop_p95_ms,traversal_2hop_p50_ms,traversal_2hop_p95_ms,traversal_3hop_p50_ms,traversal_3hop_p95_ms,point_lookup_p50_ms,point_lookup_p95_ms,filtered_lookup_p50_ms,filtered_lookup_p95_ms,aggregation_p50_ms,aggregation_p95_ms
+Neo4j,7115,103689,20.358,28.793,19.021,25.486,11.157,127.193,10.178,13.653,8.363,9.69,38.766,65.853
