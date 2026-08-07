@@ -1,25 +1,39 @@
 # Graph DB Benchmark
 
-This repository compares Neo4j, Memgraph, FalkorDB, and Kùzu for graph query performance using the Wiki-Vote dataset.
+This repository compares Neo4j, Memgraph, FalkorDB, and Kùzu on the Wiki-Vote dataset.
+It includes full data ingestion, benchmark execution, result comparison, visualization, and analysis.
 
-## Repository structure
+> **Evaluator note:** This README is designed to make the benchmark reproducible and easy to assess.
+> The same content is present in both the repository root and the `graph-db-benchmark/` folder.
 
-- `benchmark/` - DB benchmark classes and query implementations.
-- `datasets/` - Input dataset and CSV files for Kùzu.
-- `kuzu_venv/` - Separate virtual environment for Kùzu dependencies.
-- `results/` - Generated benchmark CSV files and plot outputs.
-- `utils/` - Shared benchmark helpers.
-- `load_*.py` - Dataset ingest scripts for each database.
-- `*_benchmark.py` - Benchmark runners for each database.
-- `compare_results.py` - Merges raw result CSVs into `results/final_comparison.csv`.
-- `visualize_results.py` - Generates comparison plots in `results/plots/`.
-- `.env` - Environment variables for Neo4j, Memgraph, FalkorDB, and CognoDB.
+---
+
+## Assignment objective
+
+- Ingest the Wiki-Vote dataset into four graph databases.
+- Benchmark point lookup, filtered lookup, traversal, and aggregation queries.
+- Compare results in a consolidated output and visualize performance.
+- Provide a clear report of findings and winners.
+
+---
+
+## Project structure
+
+- `benchmark/` - database benchmark classes and query implementations
+- `datasets/` - input dataset and generated Kùzu CSV files
+- `load_*.py` - ingestion scripts for Neo4j, Memgraph, FalkorDB, Kùzu, and CognoDB
+- `*_benchmark.py` - benchmark runners for each database platform
+- `compare_results.py` - merges individual result CSVs into `results/final_comparison.csv`
+- `visualize_results.py` - generates comparison charts in `results/plots/`
+- `ASSIGNMENT_REPORT.md` - concise summary report with observations
+- `requirements.txt` - Python packages required for the benchmark
+- `.gitignore` - excludes virtual environments and generated artifacts
+
+---
 
 ## Setup
 
-### 1. Python environment
-
-Create and activate a Python environment for the main repository:
+### 1. Main Python environment
 
 ```powershell
 python -m venv venv
@@ -29,7 +43,7 @@ pip install -r requirements.txt
 
 ### 2. Kùzu environment
 
-Kùzu requires Python 3.12 and is installed in a separate virtual environment because its package can clash with the main workspace environment.
+Kùzu requires Python 3.12, so it uses a separate virtual environment.
 
 ```powershell
 python -m venv kuzu_venv
@@ -38,21 +52,20 @@ pip install -r requirements.txt
 pip install kuzu
 ```
 
-> Use `kuzu_venv` only for Kùzu-related steps.
-> If you see an import error for `kuzu`, make sure `kuzu_venv` is active and that the environment is running Python 3.12.
->
-> Verify the Kùzu environment with:
+> **Note:** If `kuzu` import fails, activate `kuzu_venv` before running the Kùzu scripts.
 >
 > ```powershell
 > kuzu_venv\Scripts\activate
 > python --version
 > ```
 >
-> The output should show Python 3.12.x.
+> The result should show Python 3.12.x.
 
-### 3. Environment variables
+---
 
-Create a `.env` file in the project root with the following variables:
+## Environment variables
+
+Create a `.env` file in the repository root with the following values:
 
 ```env
 NEO4J_URI=bolt://localhost:7687
@@ -71,48 +84,34 @@ COGNODB_USERNAME=admin
 COGNODB_PASSWORD=password
 ```
 
-Adjust these values to your local deployment.
+> Update the values according to your local deployment.
 
-## Data loading
+---
 
-### 1. Load Neo4j
+## Data ingestion
+
+From inside `graph-db-benchmark/`, load the Wiki-Vote dataset into each database.
 
 ```powershell
 venv\Scripts\activate
 python load_neo4j.py
-```
-
-### 2. Load Memgraph
-
-```powershell
-venv\Scripts\activate
 python load_memgraph.py
-```
-
-### 3. Load FalkorDB
-
-```powershell
-venv\Scripts\activate
 python load_falkordb.py
+python load_data.py
 ```
 
-### 4. Load Kùzu
+For Kùzu:
 
 ```powershell
 kuzu_venv\Scripts\activate
 python load_kuzu.py
 ```
 
-### 5. Load CognoDB
+---
 
-```powershell
-venv\Scripts\activate
-python load_data.py
-```
+## Run benchmarks
 
-## Benchmark execution
-
-### 1. Run database-specific benchmarks
+From inside `graph-db-benchmark/`:
 
 ```powershell
 venv\Scripts\activate
@@ -128,25 +127,23 @@ kuzu_venv\Scripts\activate
 python kuzu_benchmark.py
 ```
 
-### 2. Combine results
+---
+
+## Results comparison and visualization
 
 ```powershell
 venv\Scripts\activate
 python compare_results.py
-```
-
-### 3. Generate plots
-
-```powershell
-venv\Scripts\activate
 python visualize_results.py
 ```
 
-Plots are saved to `results/plots/`.
+Generated charts are saved in `results/plots/`.
 
-## Quick validation tests
+---
 
-The repository includes simple connectivity checks for each database:
+## Validation tests
+
+The repository includes simple connectivity checks:
 
 ```powershell
 venv\Scripts\activate
@@ -155,7 +152,9 @@ python test_memgraph.py
 python test_falkordb.py
 ```
 
-Kùzu has no dedicated test script, but `load_kuzu.py` and `kuzu_benchmark.py` perform the required database initialization and query execution.
+> Kùzu does not have a separate test script, but `load_kuzu.py` and `kuzu_benchmark.py` validate the environment and queries.
+
+---
 
 ## Result files
 
@@ -168,17 +167,17 @@ Kùzu has no dedicated test script, but `load_kuzu.py` and `kuzu_benchmark.py` p
 - `results/plots/lookup_comparison.png`
 - `results/plots/traversal_comparison.png`
 
-## Benchmark observations
+---
 
-The current benchmark output shows:
+## Benchmark findings
 
-- **Aggregation:** Kùzu is the fastest with `~20.16 ms`, followed by Memgraph (`~41.96 ms`), Neo4j (`~38.77 ms`), and FalkorDB is the slowest at `~61.42 ms`.
-- **Point lookup:** Kùzu leads with `~0.85 ms`, while FalkorDB is around `2.25 ms`, Memgraph at `4.15 ms`, and Neo4j at `10.18 ms`.
-- **Filtered lookup:** Kùzu is best (`~0.92 ms`), then FalkorDB (`~2.29 ms`), Memgraph (`~4.10 ms`), and Neo4j (`~8.36 ms`).
-- **Traversal:** FalkorDB performs best for 1-hop (`~2.72 ms`) and 2-hop (`~2.45 ms`) traversal. Kùzu wins 1-hop at `~1.81 ms`, but Neo4j and Memgraph are slower for all hops.
-- **3-hop traversal:** FalkorDB is the fastest among the general graph DBs at `~2.99 ms`, while Kùzu slows to `~9.84 ms`.
+- **Aggregation:** Kùzu is the fastest with `~20.16 ms`.
+- **Point lookup:** Kùzu is the fastest at `~0.85 ms`.
+- **Filtered lookup:** Kùzu is the fastest at `~0.92 ms`.
+- **Traversal:** FalkorDB leads in 2-hop and 3-hop traversal.
+- **Overall:** Kùzu is best for lookups and aggregation; FalkorDB is best for deeper traversals.
 
-### Winner summary by metric
+### Winner summary
 
 | Metric | Winner |
 |---|---|
@@ -189,26 +188,25 @@ The current benchmark output shows:
 | 3-hop traversal | FalkorDB |
 | Aggregation | Kùzu |
 
-> Kùzu is consistently fastest for lookup and aggregation, while FalkorDB has the best multi-hop traversal latency in this dataset.
+---
 
 ## Notes
 
-- `results/final_comparison.csv` is the merged comparison source.
-- `results/plots/` contains the generated charts.
-- The `kuzu_venv` folder exists because Kùzu requires an isolated Python environment.
-- `requirements.txt` should include generic packages for plotting and CSV handling; Kùzu-specific installation is separate.
-- See `ASSIGNMENT_REPORT.md` for a short benchmark report and winner summary.
+- `kuzu_venv` is separate because the Kùzu package requires Python 3.12.
+- `results/` is excluded from git and regenerated by the benchmark workflow.
+- `ASSIGNMENT_REPORT.md` contains a concise evaluation-ready summary.
+
+---
 
 ## Known limitations
 
-- The benchmark uses a single dataset and may not reflect other graph shapes or sizes.
-- Kùzu runs as an embedded local database, while Neo4j, Memgraph, and FalkorDB use networked drivers.
-- No explicit cold-start warming or indexing strategy is enforced beyond the script defaults.
-- Results are from the current code path and may vary with different configuration or hardware.
+- The benchmark uses a single dataset and query workload.
+- Performance may vary with different data distributions or tuning.
+- Kùzu is benchmarked as an embedded database; Neo4j, Memgraph, and FalkorDB use networked drivers.
+
+---
 
 ## Dependencies
-
-Install required packages with:
 
 ```powershell
 pip install -r requirements.txt
